@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JWT WebSocket Client</title>
+
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            max-width: 900px;
+            margin: auto;
+        }
+
+        #log {
+            border: 1px solid #ccc;
+            height: 450px;
+            overflow-y: auto;
+            padding: 10px;
+            background: #f9f9f9;
+            margin-top: 10px;
+        }
+
+        .msg { margin: 4px 0; }
+        .sent { color: blue; }
+        .recv { color: green; }
+        .sys { color: gray; }
+        .error { color: red; }
+
+        input, button {
+            padding: 8px;
+            margin: 4px;
+        }
+
+        button {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<h2>JWT Auth WebSocket Test</h2>
+
+<div>
+    <strong>User ID:</strong>
+    <input id="userId" value="alice" placeholder="alice">
+    <button onclick="connect()">Connect</button>
+    <button onclick="disconnect()">Disconnect</button>
+</div>
+
+<div>
+    <input
+        id="message"
+        placeholder="Type message..."
+        style="width:400px;"
+    >
+    <button onclick="sendMessage()">Send</button>
+</div>
+
+<h3>Status: <span id="status">Disconnected</span></h3>
+
+<div id="log"></div>
+
+<script>
+let ws = null;
+let jwtToken = null;
+
+const log = document.getElementById("log");
+const statusEl = document.getElementById("status");
+
+function logMsg(text, cls = "sys") {
+    const div = document.createElement("div");
+    div.className = `msg ${cls}`;
+    div.textContent = text;
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+}
+
+async function connect() {
+
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        logMsg("Already connected");
+        return;
+    }
+
+    const userId = document.getElementById("userId").value.trim();
+
+    if (!userId) {
+        logMsg("User ID required", "error");
+        return;
+    }
+
+    try {
+
+        logMsg("Fetching JWT token...");
+
+        const response = await fetch(`/token/${encodeURIComponent(userId)}`);
+
+        if (!response.ok) {
+            throw new Error("Failed to get token");
+        }
+
+        const data = await response.json();
+
+        jwtToken = data.token;
+
+        logMsg("JWT token received");
+
+        ws = new WebSocket(
+            `ws://localhost:8000/ws?token=${encodeURIComponent(jwtToken)}`
+        );
+
+        ws.onopen = () => {
+            statusEl.textContent = `Connected as ${userId}`;
+            statusEl.style.color = "green";
+
+            logMsg(`Connected as ${userId}`);
+        };
+
+        ws.onmessage = (event) => {
+            logMsg(`<<< ${event.data}`, "recv");
+        };
+
+        ws.onclose = (event) => {
+            statusEl.textContent = "Disconnected";
+            statusEl.style.color = "red";
+
+            logMsg(
+                `Disconnected (code=${event.code}, reason=${event.reason})`,
+                "sys"
+            );
+
+            ws = null;
+        };
+
+        ws.onerror = () => {
+            logMsg("WebSocket Error", "error");
+        };
+
+    } catch (err) {
+        logMsg(err.message, "error");
+    }
+}
+
+function disconnect() {
+    if (ws) {
+        ws.close();
+    }
+}
+
+function sendMessage() {
+
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+        logMsg("Not connected", "error");
+        return;
+    }
+
+    const input = document.getElementById("message");
+
+    const message = input.value.trim();
+
+    if (!message) return;
+
+    ws.send(message);
+
+    logMsg(`>>> ${message}`, "sent");
+
+    input.value = "";
+}
+
+document
+    .getElementById("message")
+    .addEventListener("keydown", function(e) {
+        if (e.key === "Enter") {
+            sendMessage();
+        }
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Redis Pub/Sub Chat Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        #log {
+            border: 1px solid #ccc;
+            height: 500px;
+            overflow-y: auto;
+            padding: 10px;
+            background: #f9f9f9;
+            margin: 10px 0;
+        }
+        .msg { margin: 4px 0; line-height: 1.4; }
+        .system { color: gray; font-style: italic; }
+        .chat { color: green; }
+        .sent { color: blue; }
+        input, button {
+            padding: 8px;
+            margin: 5px 2px;
+        }
+        button { cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h2>Redis Pub/Sub Chat Test</h2>
+
+    <div>
+        <strong>Your Username:</strong>
+        <input id="username" value="karan" style="width: 180px;">
+        <button onclick="connect()">Connect</button>
+        <button onclick="disconnect()">Disconnect</button>
+    </div>
+
+    <div style="margin-top: 10px;">
+        <input id="message" placeholder="Type a message..." style="width: 70%;">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <h3>Status: <span id="status">disconnected</span></h3>
+    <div id="log"></div>
+
+    <script>
+        let ws = null;
+        const log = document.getElementById("log");
+        const statusEl = document.getElementById("status");
+
+        function logMsg(text, cls = "system") {
+            const div = document.createElement("div");
+            div.className = `msg ${cls}`;
+            div.textContent = text;
+            log.appendChild(div);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function connect() {
+            if (ws && ws.readyState === WebSocket.OPEN) return;
+
+            const username = document.getElementById("username").value.trim();
+            if (!username) {
+                alert("Username is required!");
+                return;
+            }
+
+            const url = `ws://localhost:8000/ws/${encodeURIComponent(username)}`;
+            ws = new WebSocket(url);
+
+            ws.onopen = () => {
+                statusEl.textContent = "connected";
+                statusEl.style.color = "green";
+                logMsg(`>>> Connected as ${username}`, "system");
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.type === "system") {
+                        logMsg(`📢 ${data.text}`, "system");
+                    } else if (data.type === "chat") {
+                        logMsg(`[${data.user}] ${data.text}`, "chat");
+                    }
+                } catch (e) {
+                    logMsg(event.data);
+                }
+            };
+
+            ws.onclose = () => {
+                statusEl.textContent = "disconnected";
+                statusEl.style.color = "red";
+                logMsg("<<< Disconnected", "system");
+            };
+
+            ws.onerror = () => logMsg("Connection error", "system");
+        }
+
+        function disconnect() {
+            if (ws) ws.close();
+        }
+
+        function sendMessage() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                logMsg("Not connected!", "system");
+                return;
+            }
+            const msgInput = document.getElementById("message");
+            const text = msgInput.value.trim();
+            if (!text) return;
+
+            ws.send(text);
+            logMsg(`You: ${text}`, "sent");
+            msgInput.value = "";
+        }
+
+        // Send on Enter
+        document.getElementById("message").addEventListener("keypress", (e) => {
+            if (e.key === "Enter") sendMessage();
+        });
+    </script>
+</body>
+</html>

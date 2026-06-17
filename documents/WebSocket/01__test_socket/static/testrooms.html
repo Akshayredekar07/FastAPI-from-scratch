@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>WebSocket Room Client</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        #log {
+            border: 1px solid #ccc;
+            height: 400px;
+            overflow-y: auto;
+            padding: 10px;
+            background: #f9f9f9;
+            margin-top: 10px;
+        }
+        .msg {
+            margin: 4px 0;
+        }
+        .sent {
+            color: blue;
+        }
+        .recv {
+            color: green;
+        }
+        .sys {
+            color: gray;
+            font-style: italic;
+        }
+        input {
+            padding: 8px;
+        }
+        button {
+            padding: 8px 16px;
+            cursor: pointer;
+        }
+        .row {
+            margin-bottom: 10px;
+        }
+        .room-buttons {
+            margin: 10px 0;
+        }
+        .room-btn {
+            margin-right: 6px;
+            margin-bottom: 6px;
+            padding: 6px 12px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <h2>WebSocket Room Test Client</h2>
+    
+    <div class="row">
+        Server:
+        <input
+            id="server"
+            value="ws://localhost:8000/ws"
+            style="width: 300px;"
+        >
+        <button onclick="connectWithRoom('general')">general</button>
+        <button onclick="connectWithRoom('room1')">room1</button>
+        <button onclick="connectWithRoom('room2')">room2</button>
+        <button onclick="connectWithRoom('test')">test</button>
+    </div>
+
+    <div class="row">
+        Or custom Room:
+        <input
+            id="room"
+            value="general"
+            style="width: 150px;"
+        >
+        <button onclick="connect()">Connect Custom</button>
+        <button onclick="disconnect()">Disconnect</button>
+    </div>
+
+    <h3>
+        Status:
+        <span id="status">disconnected</span>
+    </h3>
+    <div id="log"></div>
+    <div style="margin-top:10px;">
+        <input
+            id="msg"
+            placeholder="Type a message..."
+            style="width:70%;"
+            onkeydown="if(event.key==='Enter') send()"
+        >
+        <button onclick="send()">Send</button>
+    </div>
+
+    <script>
+        let ws = null;
+        const log = document.getElementById("log");
+        const status = document.getElementById("status");
+        const roomInput = document.getElementById("room");
+
+        function logMsg(text, cls = "sys") {
+            const div = document.createElement("div");
+            div.className = "msg " + cls;
+            div.textContent = text;
+            log.appendChild(div);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function connectWithRoom(roomName) {
+            roomInput.value = roomName;
+            connect();
+        }
+
+        function connect() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                logMsg("Already connected", "sys");
+                return;
+            }
+            const server = document.getElementById("server").value.trim();
+            const room = roomInput.value.trim();
+            if (!room) {
+                logMsg("Room name required", "sys");
+                return;
+            }
+            const url = `${server}/${room}`;
+            ws = new WebSocket(url);
+            ws.onopen = () => {
+                status.textContent = "connected";
+                logMsg(`>>> Connected to room: ${room}`, "sys");
+            };
+            ws.onmessage = (event) => {
+                logMsg(`<<< ${event.data}`, "recv");
+            };
+            ws.onclose = () => {
+                status.textContent = "disconnected";
+                logMsg("<<< Disconnected", "sys");
+            };
+            ws.onerror = () => {
+                logMsg("<<< Connection Error", "sys");
+            };
+        }
+
+        function disconnect() {
+            if (ws) {
+                ws.close();
+            }
+        }
+
+        function send() {
+            const input = document.getElementById("msg");
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                logMsg("Cannot send: not connected", "sys");
+                return;
+            }
+            const message = input.value.trim();
+            if (!message) {
+                return;
+            }
+            ws.send(message);
+            logMsg(`>>> ${message}`, "sent");
+            input.value = "";
+        }
+    </script>
+</body>
+</html>

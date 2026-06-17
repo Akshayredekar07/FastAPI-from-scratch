@@ -1,0 +1,7 @@
+fastapi 
+uvicorn 
+websockets
+websocket-client
+pyjwt==2.13.0
+redis==8.0.0
+
