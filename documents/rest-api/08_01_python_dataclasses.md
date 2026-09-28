@@ -258,9 +258,9 @@ flowchart LR
     B --> C[TrainingExperiment]
     C --> D[Experiment Results]
 
-    A -->|field<br>features: List[str]<br>target_column: str| A1[default_factory<br>patterns]
-    B -->|field<br>hidden_dims: List[int]| B1[mutable default<br>protection]
-    C -->|field<br>sort_index: float| C1[custom sort<br>comparison]
+    A -->|field<br/>features: list of strings<br/>target_column: str| A1[default_factory<br/>patterns]
+    B -->|field<br/>hidden_dims: list of integers| B1[mutable default<br/>protection]
+    C -->|field<br/>sort_index: float| C1[custom sort<br/>comparison]
 
     style A fill:#e1f5fe
     style B fill:#f3e5f5

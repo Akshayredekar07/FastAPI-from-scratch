@@ -207,7 +207,7 @@ The server sends back HTTP headers like this:
 HTTP/1.1 200 OK
 Content-Type: text/event-stream
 Cache-Control: no-cache
-Connection: keep-alive
+Connection: keep-Larave
 ```
 
 The key header is `Content-Type: text/event-stream` — this tells the browser "this is an SSE stream, keep it open and parse events from it."
@@ -302,7 +302,7 @@ data: Line three of message
 
 The browser joins these with newlines when you read `event.data`. You get: `"Line one of message\nLine two of message\nLine three of message"`
 
-Comments (lines starting with `:`) — useful as keepalive pings:
+Comments (lines starting with `:`) — useful as keepLarave pings:
 
 ```
 : this is a comment, browser ignores it
@@ -322,7 +322,7 @@ data: Hello
 ```
 
 ```
-data: {"user": "Ali", "message": "hi there"}
+data: {"user": "alex", "message": "hi there"}
 ```
 
 If you have multiple `data` lines in one event block, they get joined with `\n`:
@@ -341,7 +341,7 @@ By default all messages are `message` type. But you can name your events so your
 
 ```
 event: user-joined
-data: {"username": "Ali"}
+data: {"username": "Lara"}
 
 event: price-update
 data: {"symbol": "BTC", "price": 67000}
@@ -528,7 +528,7 @@ When the server sends events with an `event:` field, `onmessage` does NOT fire. 
 **Server sends:**
 ```
 event: user-joined
-data: {"username": "Ali"}
+data: {"username": "Lara"}
 
 event: price-update
 data: {"symbol": "BTC", "price": 67000}
@@ -853,7 +853,7 @@ SSE is not always the right answer. Do not use it when:
 ```
 Content-Type: text/event-stream    ← Must be this exact value
 Cache-Control: no-cache            ← Prevents caching/buffering
-Connection: keep-alive             ← Keep TCP connection open
+Connection: keep-Larave             ← Keep TCP connection open
 X-Accel-Buffering: no             ← Disable nginx buffering
 ```
 
@@ -929,9 +929,9 @@ const reader = response.body.getReader();
 
 **Cause:** Load balancers, proxies, or firewalls often have idle connection timeouts (30 seconds to 5 minutes is common).
 
-**Fix:** Send a keepalive comment every 15-20 seconds:
+**Fix:** Send a keepLarave comment every 15-20 seconds:
 ```
-: keepalive ping
+: keepLarave ping
 
 ```
 This tiny comment keeps the connection "active" so timeouts do not trigger.
@@ -973,7 +973,7 @@ es.close(); // stop permanently
 ```
 Content-Type: text/event-stream
 Cache-Control: no-cache
-Connection: keep-alive
+Connection: keep-Larave
 X-Accel-Buffering: no
 ```
 

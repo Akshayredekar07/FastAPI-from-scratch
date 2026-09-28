@@ -1,0 +1,16 @@
+# Core packages
+fastapi
+uvicorn[standard]    # ASGI server for FastAPI
+
+# SSE library — sse-starlette is the standard for FastAPI SSE
+sse-starlette
+
+# Supporting packages
+pydantic             # Already comes with FastAPI
+python-jose[cryptography]  # JWT auth
+redis                # Redis pub/sub for scaling
+httpx                # For testing
+
+# Optional
+python-dotenv        # Load .env config files
+aioredis             # Async Redis (if you prefer)
